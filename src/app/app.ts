@@ -1,12 +1,19 @@
-import { Component, signal } from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import {TripletVisualization} from './triplet-visualization/triplet-visualization';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, TripletVisualization],
   templateUrl: './app.html',
-  styleUrl: './app.css'
 })
-export class App {
-  protected readonly title = signal('BPGTripletVisualization');
+export class App implements OnInit, OnDestroy {
+
+  ngOnDestroy(): void {
+      throw new Error('Method not implemented.');
+  }
+  ngOnInit(): void {
+      throw new Error('Method not implemented.');
+  }
+
 }
