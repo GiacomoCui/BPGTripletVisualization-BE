@@ -1,8 +1,7 @@
-import {Component, OnInit} from '@angular/core';
-import { MenuItem, MessageService } from 'primeng/api';
+import {Component, inject, OnInit} from '@angular/core';
+import {MenuItem, MessageService} from 'primeng/api';
 import {Menubar} from 'primeng/menubar';
-import {Fluid} from 'primeng/fluid';
-import {Button} from 'primeng/button';
+import {Router, RouterOutlet} from '@angular/router';
 
 
 @Component({
@@ -11,8 +10,7 @@ import {Button} from 'primeng/button';
   styleUrls: ['./app.css'],
   imports: [
     Menubar,
-    Fluid,
-    Button
+    RouterOutlet
   ],
   providers: [MessageService]
 })
@@ -20,28 +18,30 @@ export class App implements OnInit {
 
   menuItems: MenuItem[] = [];
   items: MenuItem[] | null = null;
+  private router = inject(Router);
 
-  constructor(private messageService: MessageService) {}
+  constructor() {
+  }
 
   ngOnInit() {
     this.menuItems = [
-      { label: 'Portfolio' },
-      { label: 'Contact' },
-      { label: 'Blog' }
-    ];
-    this.items = [
       {
-        icon: 'pi pi-pencil',
+        label: 'Homepage',
         command: () => {
-          this.messageService.add({ severity: 'info', summary: 'Add', detail: 'Data Added' });
+          this.router.navigate(['']);
         }
       },
       {
-        icon: 'pi pi-refresh',
+        label: 'Triplets From ASes',
         command: () => {
-          this.messageService.add({ severity: 'success', summary: 'Update', detail: 'Data Updated' });
+          this.router.navigate(['/tripletsFromASes']);
         }
-      }
+      },
+      {label: 'Blog'}
     ];
+  }
+
+  onMenuItemClick(event: any) {
+    console.log('Menu item clicked:', event);
   }
 }
