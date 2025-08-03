@@ -1,19 +1,47 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
-import { RouterOutlet } from '@angular/router';
-import {TripletVisualization} from './triplet-visualization/triplet-visualization';
+import {Component, OnInit} from '@angular/core';
+import { MenuItem, MessageService } from 'primeng/api';
+import {Menubar} from 'primeng/menubar';
+import {Fluid} from 'primeng/fluid';
+import {Button} from 'primeng/button';
+
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, TripletVisualization],
   templateUrl: './app.html',
+  styleUrls: ['./app.css'],
+  imports: [
+    Menubar,
+    Fluid,
+    Button
+  ],
+  providers: [MessageService]
 })
-export class App implements OnInit, OnDestroy {
+export class App implements OnInit {
 
-  ngOnDestroy(): void {
-      throw new Error('Method not implemented.');
-  }
-  ngOnInit(): void {
-      throw new Error('Method not implemented.');
-  }
+  menuItems: MenuItem[] = [];
+  items: MenuItem[] | null = null;
 
+  constructor(private messageService: MessageService) {}
+
+  ngOnInit() {
+    this.menuItems = [
+      { label: 'Portfolio' },
+      { label: 'Contact' },
+      { label: 'Blog' }
+    ];
+    this.items = [
+      {
+        icon: 'pi pi-pencil',
+        command: () => {
+          this.messageService.add({ severity: 'info', summary: 'Add', detail: 'Data Added' });
+        }
+      },
+      {
+        icon: 'pi pi-refresh',
+        command: () => {
+          this.messageService.add({ severity: 'success', summary: 'Update', detail: 'Data Updated' });
+        }
+      }
+    ];
+  }
 }
