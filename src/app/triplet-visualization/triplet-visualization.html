@@ -1,7 +1,31 @@
-<p>la pagina delle triplette funziona!</p>
-
-<p-fieldset legend="Header" [toggleable]="true" [collapsed]="isCollapsed">
-  <p>
-    Lorem ipsum dolor sit amet...
-  </p>
-</p-fieldset>
+<div class="m-5">
+  <form [formGroup]="netForm" novalidate>
+    <p-fieldset legend="Header" [toggleable]="true" [collapsed]="isCollapsed">
+      <div class="mt-2 grid flex">
+        <div class="col-4 md:col-4">
+          <p-floatlabel>
+            <input pInputText id="source" [maxlength]="6" formControlName="asNumber" pKeyFilter="pint"/>
+            <label>AS Number</label>
+          </p-floatlabel>
+        </div>
+        <div class="col-4 md:col-4">
+          <p-floatlabel>
+            <p-multi-select class="w-5" formControlName="queryGroup" [options]="queryFamily"
+                            [optionLabel]="'name'"></p-multi-select>
+            <label>IP Family</label>
+          </p-floatlabel>
+        </div>
+        <div class="col-4 md:col-4">
+          <p-floatlabel>
+            <p-multi-select class="w-5" formControlName="queryGroup" [options]="queryFamily"
+                            [optionLabel]="'name'"></p-multi-select>
+            <label>Altra opzione</label>
+          </p-floatlabel>
+        </div>
+        <div class="col-4 md:col-4">
+          <p-button label="Search" icon="pi pi-search" class="w-5" (click)="search()"></p-button>
+        </div>
+      </div>
+    </p-fieldset>
+  </form>
+</div>

@@ -6,11 +6,13 @@ export const routes: Routes = [
   {
     path: '',
     component: Homepage,
-    title: 'Homepage'
+    title: 'Homepage',
+    loadChildren: () => import('./homepage/homepage.module').then(m => m.HomepageModule)
   },
   {
     path: 'tripletsFromASes',
     component: TripletVisualization,
-    title: 'Triplet Visualization'
+    title: 'Triplet Visualization',
+    loadChildren: () => import('./triplet-visualization/triplet-visualization.module').then(m => m.TripletVisualizationModule)
   },
 ];

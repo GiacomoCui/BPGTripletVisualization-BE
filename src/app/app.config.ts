@@ -5,9 +5,13 @@ import { providePrimeNG } from 'primeng/config';
 import Lara from '@primeuix/themes/lara';
 
 import { routes } from './app.routes';
+import {environment} from '../environment/environment';
+import {provideHttpClient} from '@angular/common/http';
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    { provide: 'ENVIRONMENT', useValue: environment },
+    provideHttpClient(),
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
@@ -15,10 +19,8 @@ export const appConfig: ApplicationConfig = {
     providePrimeNG({
       theme: {
         preset: Lara,
-
         options: {
           ripple: true,
-          darkModeSelector: 'none',
           rippleConfig: {
             animationDuration: 500,
             animationDelay: 100

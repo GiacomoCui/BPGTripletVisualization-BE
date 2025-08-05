@@ -1,13 +1,14 @@
 import {Component, inject, OnInit} from '@angular/core';
 import {MenuItem, MessageService} from 'primeng/api';
-import {Menubar} from 'primeng/menubar';
 import {Router, RouterOutlet} from '@angular/router';
+import {Menubar} from 'primeng/menubar';
 
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrls: ['./app.css'],
+  standalone: true,
   imports: [
     Menubar,
     RouterOutlet
@@ -17,7 +18,6 @@ import {Router, RouterOutlet} from '@angular/router';
 export class App implements OnInit {
 
   menuItems: MenuItem[] = [];
-  items: MenuItem[] | null = null;
   private router = inject(Router);
 
   constructor() {
@@ -37,7 +37,6 @@ export class App implements OnInit {
           this.router.navigate(['/tripletsFromASes']);
         }
       },
-      {label: 'Blog'}
     ];
   }
 
