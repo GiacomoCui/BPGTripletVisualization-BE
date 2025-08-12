@@ -8,6 +8,12 @@ export const environment = {
     tripletVisualization: {
       availableCPs: '/triplets/availableCPs',
       middleCPsWithFamily: '/triplets/middleCPsWithFamily',
+      findAvailableCPs: '/triplets/AvailableCPs',
+      findTriplets: '/triplets/findOnecp',
+      findAsNumber: 'middleAS=',
+      findQueryFamily: 'queryFamily=',
+      findIPNumber: 'peerIPAddress=',
+      findPeerAS: 'peerAS='
     }
   }
 }

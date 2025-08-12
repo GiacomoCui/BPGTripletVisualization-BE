@@ -2,30 +2,54 @@
   <form [formGroup]="netForm" novalidate>
     <p-fieldset legend="Header" [toggleable]="true" [collapsed]="isCollapsed">
       <div class="mt-2 grid flex">
-        <div class="col-4 md:col-4">
+        <div class="flex-column col-4 md:col-4">
           <p-floatlabel>
-            <input pInputText id="source" [maxlength]="6" formControlName="asNumber" pKeyFilter="pint"/>
+            <input pInputText required id="source" [maxlength]="6"
+                   formControlName="asNumber" pKeyFilter="pint" (blur)="searchAvailableCPs()"/>
             <label>AS Number</label>
           </p-floatlabel>
         </div>
-        <div class="col-4 md:col-4">
-          <p-floatlabel>
-            <p-multi-select class="w-5" formControlName="queryGroup" [options]="queryFamily"
-                            [optionLabel]="'name'"></p-multi-select>
-            <label>IP Family</label>
-          </p-floatlabel>
-        </div>
-        <div class="col-4 md:col-4">
-          <p-floatlabel>
-            <p-multi-select class="w-5" formControlName="queryGroup" [options]="queryFamily"
-                            [optionLabel]="'name'"></p-multi-select>
-            <label>Altra opzione</label>
-          </p-floatlabel>
-        </div>
-        <div class="col-4 md:col-4">
-          <p-button label="Search" icon="pi pi-search" class="w-5" (click)="search()"></p-button>
-        </div>
+        @if (availableCPs != null && availableCPs.length > 0) {
+          <div class="col-4 flex-column md:col-4">
+            <p-floatlabel>
+              <p-select class="w-5" formControlName="peerAS" [options]="availableCPs" (onClick)="showPeers()"
+                        [optionLabel]="'label'" [showClear]="true" [filter]="true"></p-select>
+              <label>Available CPs</label>
+            </p-floatlabel>
+          </div>
+        }
+        @if (ipForPeerSelected != null && ipForPeerSelected.length > 0) {
+          <div class="col-4 flex-column md:col-4">
+            <p-floatlabel>
+              <p-select class="w-5" formControlName="peerIP" [options]="ipForPeerSelected"
+                        (onChange)="searchVisibility()"
+                        [optionLabel]="'label'" [showClear]="true" [filter]="true"></p-select>
+              <label>Available Peers</label>
+            </p-floatlabel>
+          </div>
+          <div class="col-4 flex-column md:col-4">
+            <p-floatlabel>
+              <p-multi-select class="w-5" formControlName="queryFamily" [options]="queryFamily"
+                              [optionLabel]="'name'"></p-multi-select>
+              <label>IP Family</label>
+            </p-floatlabel>
+          </div>
+          <div class="flex-column align-content-center col-4 md:col-4">
+            <span>
+              <p-check-box [value]="hiveSelected" [binary]="true" (onChange)="hiveSelected = !hiveSelected"/>
+                <label for="hiveSelected">Visualizzazione Hive</label>
+            </span>
+          </div>
+        }
+      </div>
+      <div class="col-4 md:col-4">
+        <p-button label="Search" icon="pi pi-search" [disabled]="!ableSearch" class="w-5"
+                  (click)="searchTriplets()"></p-button>
       </div>
     </p-fieldset>
   </form>
+</div>
+
+<div #myDataVis>
+
 </div>

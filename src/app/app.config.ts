@@ -22,6 +22,7 @@ export const appConfig: ApplicationConfig = {
         options: {
           ripple: true,
           rippleConfig: {
+            darkModeSelector: '.my-app-dark',
             animationDuration: 500,
             animationDelay: 100
           }

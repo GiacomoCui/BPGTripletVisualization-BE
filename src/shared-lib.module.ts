@@ -13,6 +13,7 @@ import {Fluid} from 'primeng/fluid';
 import {Menubar} from 'primeng/menubar';
 import {TripletVisualizationService} from './app/services/triplet-visualization.service';
 import {environment} from './environment/environment';
+import {MessageService} from 'primeng/api';
 
 
 @NgModule({
@@ -53,6 +54,7 @@ import {environment} from './environment/environment';
     Menubar
   ],
   providers: [
+    MessageService,
     TripletVisualizationService,
     { provide: 'ENVIRONMENT', useValue: environment }
 
