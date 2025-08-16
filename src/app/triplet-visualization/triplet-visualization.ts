@@ -1,9 +1,17 @@
-import {Component, ElementRef, Input, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {TripletVisualizationService} from '../services/triplet-visualization.service';
 import {Subscription} from 'rxjs';
 import {MessageService} from 'primeng/api';
 import * as d3 from 'd3';
+
+
+type Node =
+  {
+    ASNumber: number;
+    posizione: number;
+    type: number
+  };
 
 @Component({
   selector: 'app-triplet-visualization',
@@ -26,8 +34,8 @@ export class TripletVisualization implements OnInit, OnDestroy {
   hiveSelected: boolean = false;
   peerInfo!: any
 
-  origins: Set<string> = new Set<string>();
-  destination: Set<string> = new Set<string>();
+  origins: Set<Node> = new Set<Node>();
+  destination: Set<Node> = new Set<Node>();
   collisionMatrix: any = [];
 
   queryFamily: any = [{name: 'IPv4', value: 4}, {name: 'IPv6', value: 6}];
@@ -109,15 +117,10 @@ export class TripletVisualization implements OnInit, OnDestroy {
         if (data && data.length > 0) {
           this.peerInfo = data;
           this.fillMatrix(data);
-          //inserisci una matrice di collisione moccata, per testare la funzione. Falla 5x4
-          /*this.collisionMatrix = [
-            [true, false, true, false],
-            [false, true, false, true],
-            [true, false, true, false],
-            [false, true, false, true],
-            [true, false, true, false]]*/
           let mat = this.optimizeAllMatrix(this.collisionMatrix)
-          console.log(mat);
+          console.log(this.origins)
+          console.log(this.destination)
+          console.log('Optimized Matrix:', mat);
           //this.drawGraph(data, this.hiveSelected);
         } else {
           this.messageService.add({severity: 'info', summary: 'Info', detail: 'No triplets found'});
@@ -131,6 +134,8 @@ export class TripletVisualization implements OnInit, OnDestroy {
   }
 
   fillMatrix(triplet: any) {
+    let asOrigin: Set<string> = new Set<string>();
+    let asDestination: Set<string> = new Set<string>();
     this.collisionMatrix = [];
     this.origins.clear();
     this.destination.clear();
@@ -138,14 +143,14 @@ export class TripletVisualization implements OnInit, OnDestroy {
     for (let i = 0; i < triplet.length; i++) {
       const t = triplet[i];
       if (t.prec) {
-        this.origins.add(t.prec);
+        asOrigin.add(t.prec);
       }
       if (t.succ) {
-        this.destination.add(t.succ);
+        asDestination.add(t.succ);
       }
     }
-    const originsArr = Array.from(this.origins);
-    const destinationArr = Array.from(this.destination);
+    const originsArr = Array.from(asOrigin);
+    const destinationArr = Array.from(asDestination);
     this.collisionMatrix = Array.from({length: destinationArr.length}, () => Array(originsArr.length).fill(false));
     for (let i = 0; i < triplet.length; i++) {
       const t = triplet[i];
@@ -154,6 +159,12 @@ export class TripletVisualization implements OnInit, OnDestroy {
       if (precIndex !== -1 && succIndex !== -1) {
         this.collisionMatrix[succIndex][precIndex] = true;
       }
+    }
+    for (let i = 0; i < asOrigin.size; i++) {
+      this.origins.add({ASNumber: Number(originsArr[i]), posizione: i, type: 0});
+    }
+    for (let i = 0; i < asDestination.size; i++) {
+      this.destination.add({ASNumber: Number(destinationArr[i]), posizione: i, type: 1});
     }
   }
 
@@ -217,21 +228,21 @@ export class TripletVisualization implements OnInit, OnDestroy {
   }
 
   optimizeAllMatrix(matrix: any[]) {
-    matrix = this.optimizeMatrix(matrix);
+    matrix = this.optimizeMatrix(matrix,1);
     matrix = matrix[0].map((_: any, colIndex: number) => matrix.map((row: any) => row[colIndex]));
-    console.log(matrix);
-    matrix = this.optimizeMatrix(matrix);
+    matrix = this.optimizeMatrix(matrix,0);
+    matrix = matrix[0].map((_: any, colIndex: number) => matrix.map((row: any) => row[colIndex]));
     return matrix;
   }
 
-  optimizeMatrix(matrix: any[][]): any[][] {
+  optimizeMatrix(matrix: any[][], type?: 0 | 1): any[][] {
     let optimizedMatrix: any[][] = [];
     let barycenterOrder: any[] = [];
-    matrix.forEach((dest: any, i: number) => {
+    matrix.forEach((col: any, i: number) => {
       let count = 0;
       let sum = 0;
-      dest.forEach((item: any, j: number) => {
-        if (item) {
+      col.forEach((row: any, j: number) => {
+        if (row) {
           count++;
           sum += j + 1;
         }
@@ -241,11 +252,34 @@ export class TripletVisualization implements OnInit, OnDestroy {
         barycenterOrder.push({index: i, median: median});
       }
     });
+    console.log('barycenter', barycenterOrder);
     barycenterOrder.sort((a, b) => a.median - b.median);
+    let i=0;
     barycenterOrder.forEach((item: any) => {
       optimizedMatrix.push(matrix[item.index]);
+      if (typeof type !== 'undefined') {
+        switch (type) {
+          case 0: // origin
+            this.origins.forEach((origin: any) => {
+              if (origin.posizione === item.index) {
+                origin.posizione = i;
+                i++;
+                return;
+              }
+            })
+            break
+          case 1: // destination
+            this.destination.forEach((destination: any) => {
+              if (destination.posizione === item.index) {
+                destination.posizione = i;
+                i++;
+                return
+              }
+            })
+            break;
+        }
+      }
     });
-    //ora metti le colonne come righe e le righe come colonne
     return optimizedMatrix;
   }
 }
