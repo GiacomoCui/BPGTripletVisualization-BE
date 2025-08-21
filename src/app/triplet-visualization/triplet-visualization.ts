@@ -9,9 +9,15 @@ import * as d3 from 'd3';
 type Node =
   {
     ASNumber: number;
-    posizione: number;
-    type: number
+    pos: number; // position in the rappresentation
+    role: number // 0 = origin, 1 = destination
   };
+
+type Links =
+  {
+    origin: Node;
+    destination: Node;
+  }
 
 @Component({
   selector: 'app-triplet-visualization',
@@ -37,6 +43,8 @@ export class TripletVisualization implements OnInit, OnDestroy {
   origins: Set<Node> = new Set<Node>();
   destination: Set<Node> = new Set<Node>();
   collisionMatrix: any = [];
+  nodeSelected: Node | null = null;
+  nodeSelectedDestination: Node | null = null;
 
   queryFamily: any = [{name: 'IPv4', value: 4}, {name: 'IPv6', value: 6}];
 
@@ -121,7 +129,7 @@ export class TripletVisualization implements OnInit, OnDestroy {
           console.log(this.origins)
           console.log(this.destination)
           console.log('Optimized Matrix:', mat);
-          //this.drawGraph(data, this.hiveSelected);
+          this.drawGraph(data, this.hiveSelected);
         } else {
           this.messageService.add({severity: 'info', summary: 'Info', detail: 'No triplets found'});
         }
@@ -161,10 +169,10 @@ export class TripletVisualization implements OnInit, OnDestroy {
       }
     }
     for (let i = 0; i < asOrigin.size; i++) {
-      this.origins.add({ASNumber: Number(originsArr[i]), posizione: i, type: 0});
+      this.origins.add({ASNumber: Number(originsArr[i]), pos: i, role: 0});
     }
     for (let i = 0; i < asDestination.size; i++) {
-      this.destination.add({ASNumber: Number(destinationArr[i]), posizione: i, type: 1});
+      this.destination.add({ASNumber: Number(destinationArr[i]), pos: i, role: 1});
     }
   }
 
@@ -184,15 +192,24 @@ export class TripletVisualization implements OnInit, OnDestroy {
   }
 
   private drawClassicGraph() {
-    let nodes: { id: number; ASNumber: number; posizione: string }[] = [];
-    //crea la struttura dati necessaria per disegnare il grafo a partire da data
-    let links = [];
-    this.origins.forEach((node: any) => {
-      nodes.push({id: node.length, ASNumber: node, posizione: 'origin'});
+    //verrà usato origin come nodi da disegnare nella linea in basso e destinazione per la linea in alto
+    // prima di iniziare tutto, cancella il grafico precedente
+    if (this.svg) {
+      const element = this.chartContainer.nativeElement;
+      d3.select(element).select('svg').remove();
+    }
+    let links: Links[] = [];
+    this.origins.forEach((origin: Node) => {
+      this.destination.forEach((destination: Node) => {
+        if (this.collisionMatrix[destination.pos][origin.pos]) {
+          links.push({origin: origin, destination: destination});
+        }
+      });
     });
 
-
-    /*let margin = {top: 20, right: 30, bottom: 30, left: 40};
+    console.log('links', links);
+    let xLength = Math.max(this.origins.size, this.destination.size);
+    let margin = {top: 20, right: 30, bottom: 30, left: 40};
     const element = this.chartContainer.nativeElement;
     this.svg = d3.select(element).append('svg')
       .attr("width", 900)
@@ -200,9 +217,9 @@ export class TripletVisualization implements OnInit, OnDestroy {
       .append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    //disegna due linee parallele, dove andranno posizionati i nodi
+    //definisci le freccette per le linee
     const xScale = d3.scaleLinear()
-      .domain([0, data.length - 1])
+      .domain([0, xLength])
       .range([0, 800]);
     const yScale = d3.scaleLinear()
       .domain([0, 1])
@@ -210,17 +227,184 @@ export class TripletVisualization implements OnInit, OnDestroy {
     this.svg.append('line')
       .attr('x1', xScale(0))
       .attr('y1', yScale(0))
-      .attr('x2', xScale(data.length - 1))
+      .attr('x2', xScale(xLength))
       .attr('y2', yScale(0))
       .attr('stroke', 'black')
     this.svg.append('line')
       .attr('x1', xScale(0))
       .attr('y1', yScale(1))
-      .attr('x2', xScale(data.length - 1))
+      .attr('x2', xScale(xLength))
       .attr('y2', yScale(1))
       .attr('stroke', 'black');
+
+
     //disegna i nodi
-    const nodi = this.svg.selectAll('.node')*/
+    const nodi = this.svg.selectAll('.node')
+      .data(this.origins)
+      .enter()
+      .append('g')
+      .attr('class', 'node')
+      .attr('transform', (d: Node) => `translate(${xScale(d.pos)}, ${yScale(0)})`);
+    nodi.append('circle')
+      .attr('r', 5)
+      .attr('fill', 'blue');
+    //disegna i nodi di destinazione
+    const nodiDestinazione = this.svg.selectAll('.node-destination')
+      .data(this.destination)
+      .enter()
+      .append('g')
+      .attr('class', 'node-destination')
+      .attr('transform', (d: Node) => `translate(${xScale(d.pos)}, ${yScale(1)})`);
+    nodiDestinazione.append('circle')
+      .attr('r', 5)
+      .attr('fill', 'red');
+    //disegna le linee tra i nodi
+    const link = this.svg.selectAll('.link')
+      .data(links)
+      .enter()
+      .append('line')
+      .attr('class', 'link')
+      .attr('x1', (d: Links) => xScale(d.origin.pos))
+      .attr('y1', (d: Links) => yScale(0) + 5) // Aggiungi il raggio del nodo
+      .attr('x2', (d: Links) => {
+        // Calcola la direzione della linea
+        const dx = xScale(d.destination.pos) - xScale(d.origin.pos);
+        const dy = yScale(1) - yScale(0);
+        const angle = Math.atan2(dy, dx);
+        // Ferma la linea a 5 pixel (raggio del nodo) dal centro del nodo
+        return xScale(d.destination.pos) - 5 * Math.cos(angle);
+      })
+      .attr('y2', (d: Links) => {
+        // Calcola la direzione della linea
+        const dx = xScale(d.destination.pos) - xScale(d.origin.pos);
+        const dy = yScale(1) - yScale(0);
+        const angle = Math.atan2(dy, dx);
+        // Ferma la linea a 5 pixel (raggio del nodo) dal centro del nodo
+        return yScale(1) - 5 * Math.sin(angle);
+      })
+      .attr('stroke', 'black')
+      .attr('stroke-width', 1)
+      .attr('marker-end', 'url(#arrowhead)');
+
+    // Definizione della freccia
+    this.svg.append('defs').append('marker')
+      .attr('id', 'arrowhead')
+      .attr('viewBox', '0 -5 10 10')
+      .attr('refX', 5)
+      .attr('refY', 0)
+      .attr('orient', 'auto')
+      .attr('markerWidth', 6)
+      .attr('markerHeight', 6)
+      .append('path')
+      .attr('d', 'M0,-5L10,0L0,5')
+      .attr('fill', 'black');
+
+    const Tooltip = d3.select(this.chartContainer.nativeElement)
+      .append("div")
+      .style("opacity", 0)
+      .attr("class", "tooltip")
+      .style("background-color", "white")
+      .style("border", "solid")
+      .style("border-width", "2px")
+      .style("border-radius", "5px")
+      .style("padding", "5px")
+
+    // Three function that change the tooltip when user hover / move / leave a cell
+   /* var mouseover = function(d) {
+      Tooltip
+        .style("opacity", 1)
+      d3.select(this)
+        .style("stroke", "black")
+        .style("opacity", 1)
+    }
+    var mousemove = function(d) {
+      Tooltip
+        .html("The exact value of<br>this cell is: " + d.value)
+        .style("left", (d3.mouse(this)[0]+70) + "px")
+        .style("top", (d3.mouse(this)[1]) + "px")
+    }
+    var mouseleave = function(d) {
+      Tooltip
+        .style("opacity", 0)
+      d3.select(this)
+        .style("stroke", "none")
+        .style("opacity", 0.8)
+    }*/
+
+// Funzione comune per il mouseover
+function handleMouseOver(event: any, d: Node) {
+  Tooltip
+    .style("opacity", 1)
+  d3.select(event.target)
+    .style("stroke", "black")
+    .style("opacity", 1)
+}
+
+// Funzione comune per il mousemove
+function handleMouseMove(event: any, d: Node) {
+  Tooltip
+    .html("AS Number: " + d.ASNumber)
+    .style("position", "absolute")
+    .style("left", (event.pageX + 10) + "px")
+    .style("top", (event.pageY - 20) + "px")
+}
+
+// Funzione comune per il mouseout
+function handleMouseOut(event: any, d: Node) {
+  Tooltip
+    .style("opacity", 0)
+  d3.select(event.target)
+    .style("stroke", "none")
+    .style("opacity", 0.8)
+}
+
+// Applica gli eventi ai nodi di origine
+nodi.on('mouseover', handleMouseOver)
+    .on('mousemove', handleMouseMove)
+    .on('mouseout', handleMouseOut);
+
+// Applica gli stessi eventi ai nodi di destinazione
+nodiDestinazione.on('mouseover', handleMouseOver)
+    .on('mousemove', handleMouseMove)
+    .on('mouseout', handleMouseOut);
+
+    //crea un evento mouseover per i nodi
+    nodi.on('click', (event: any, d: Node) => {
+      // Reset stato se si riclicca sullo stesso nodo selezionato
+      if (this.nodeSelected === d) {
+        d3.select(event.target).attr('fill', 'blue');
+        this.nodeSelected = null;
+        return;
+      }
+
+      // Ripristina colore originale dei nodi se era già selezionato un altro nodo
+      if (this.nodeSelected !== null) {
+        this.svg.selectAll('.node circle').attr('fill', 'blue');
+      }
+
+      // Seleziona il nuovo nodo
+      d3.select(event.target).attr('fill', 'orange');
+      this.nodeSelected = d;
+    })
+
+    nodiDestinazione.on('click', (event: any, d: Node) => {
+      // Reset stato se si riclicca sullo stesso nodo selezionato
+      if (this.nodeSelectedDestination === d) {
+        d3.select(event.target).attr('fill', 'red');
+        this.nodeSelectedDestination = null;
+        return;
+      }
+
+      // Ripristina colore originale dei nodi se era già selezionato un altro nodo
+      if (this.nodeSelectedDestination !== null) {
+        this.svg.selectAll('.node-destination circle').attr('fill', 'red');
+      }
+
+      // Seleziona il nuovo nodo
+      d3.select(event.target).attr('fill', 'orange');
+      this.nodeSelectedDestination = d;
+    })
+
   }
 
   private drawHiveGraph(data: any) {
@@ -228,9 +412,9 @@ export class TripletVisualization implements OnInit, OnDestroy {
   }
 
   optimizeAllMatrix(matrix: any[]) {
-    matrix = this.optimizeMatrix(matrix,1);
+    matrix = this.optimizeMatrix(matrix, 1);
     matrix = matrix[0].map((_: any, colIndex: number) => matrix.map((row: any) => row[colIndex]));
-    matrix = this.optimizeMatrix(matrix,0);
+    matrix = this.optimizeMatrix(matrix, 0);
     matrix = matrix[0].map((_: any, colIndex: number) => matrix.map((row: any) => row[colIndex]));
     return matrix;
   }
@@ -254,7 +438,7 @@ export class TripletVisualization implements OnInit, OnDestroy {
     });
     console.log('barycenter', barycenterOrder);
     barycenterOrder.sort((a, b) => a.median - b.median);
-    let i=0;
+    let i = 0;
     barycenterOrder.forEach((item: any) => {
       optimizedMatrix.push(matrix[item.index]);
       if (typeof type !== 'undefined') {

@@ -4,10 +4,13 @@ import {TripletVisualization} from './triplet-visualization';
 import {SharedLibModule} from '../../shared-lib.module';
 import {Checkbox} from "primeng/checkbox";
 import {Select} from "primeng/select";
+import {Card} from "primeng/card";
+import {Divider} from 'primeng/divider';
+import {Tooltip} from 'primeng/tooltip';
 
 @NgModule({
   declarations: [TripletVisualization],
-    imports: [CommonModule, SharedLibModule, Checkbox, Select],
+  imports: [CommonModule, SharedLibModule, Checkbox, Select, Card, Divider, Tooltip],
   exports: [TripletVisualization],
 })
 export class TripletVisualizationModule {}
