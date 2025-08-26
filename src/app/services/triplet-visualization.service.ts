@@ -24,7 +24,6 @@ export class TripletVisualizationService {
   }
 
   findTriplets(dto: any): Observable<Object> {
-    console.log(dto)
     const base = this.baseUrl + this.serviceUrl.tripletVisualization.findTriplets;
     const asParam = '?' + this.serviceUrl.tripletVisualization.findAsNumber + dto.asNumber;
     const peerASParam = '&' + this.serviceUrl.tripletVisualization.findPeerAS + dto.peerAS;
