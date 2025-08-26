@@ -41,7 +41,7 @@ export class TripletVisualization implements OnInit, OnDestroy {
   peerInfo!: any
 
   origins: Set<Node> = new Set<Node>();
-  destination: Set<Node> = new Set<Node>();
+  destinations: Set<Node> = new Set<Node>();
   collisionMatrix: any = [];
   nodeSelected: Node | null = null;
   nodeSelectedDestination: Node | null = null;
@@ -127,9 +127,9 @@ export class TripletVisualization implements OnInit, OnDestroy {
           this.fillMatrix(data);
           let mat = this.optimizeAllMatrix(this.collisionMatrix)
           console.log(this.origins)
-          console.log(this.destination)
+          console.log(this.destinations)
           console.log('Optimized Matrix:', mat);
-          this.drawGraph(data, this.hiveSelected);
+          this.drawGraph(mat, this.hiveSelected);
         } else {
           this.messageService.add({severity: 'info', summary: 'Info', detail: 'No triplets found'});
         }
@@ -146,7 +146,7 @@ export class TripletVisualization implements OnInit, OnDestroy {
     let asDestination: Set<string> = new Set<string>();
     this.collisionMatrix = [];
     this.origins.clear();
-    this.destination.clear();
+    this.destinations.clear();
 
     for (let i = 0; i < triplet.length; i++) {
       const t = triplet[i];
@@ -172,16 +172,16 @@ export class TripletVisualization implements OnInit, OnDestroy {
       this.origins.add({ASNumber: Number(originsArr[i]), pos: i, role: 0});
     }
     for (let i = 0; i < asDestination.size; i++) {
-      this.destination.add({ASNumber: Number(destinationArr[i]), pos: i, role: 1});
+      this.destinations.add({ASNumber: Number(destinationArr[i]), pos: i, role: 1});
     }
   }
 
 
-  drawGraph(data: any, hiveSelected: boolean) {
+  drawGraph(mat: any, hiveSelected: boolean) {
     if (hiveSelected) {
-      this.drawHiveGraph(data);
+      this.drawHiveGraph(mat);
     } else {
-      this.drawClassicGraph();
+      this.drawClassicGraph(mat);
     }
   }
 
@@ -191,7 +191,7 @@ export class TripletVisualization implements OnInit, OnDestroy {
     }
   }
 
-  private drawClassicGraph() {
+  private drawClassicGraph(mat: Node[][]) {
     //verrà usato origin come nodi da disegnare nella linea in basso e destinazione per la linea in alto
     // prima di iniziare tutto, cancella il grafico precedente
     if (this.svg) {
@@ -199,16 +199,16 @@ export class TripletVisualization implements OnInit, OnDestroy {
       d3.select(element).select('svg').remove();
     }
     let links: Links[] = [];
-    this.origins.forEach((origin: Node) => {
-      this.destination.forEach((destination: Node) => {
-        if (this.collisionMatrix[destination.pos][origin.pos]) {
+    for (let origin of this.origins) {
+      for(let destination of this.destinations) {
+        if (mat[destination.pos][origin.pos]) {
           links.push({origin: origin, destination: destination});
         }
-      });
-    });
+      }
+    }
 
     console.log('links', links);
-    let xLength = Math.max(this.origins.size, this.destination.size);
+    let xLength = Math.max(this.origins.size, this.destinations.size);
     let margin = {top: 20, right: 30, bottom: 30, left: 40};
     const element = this.chartContainer.nativeElement;
     this.svg = d3.select(element).append('svg')
@@ -250,7 +250,7 @@ export class TripletVisualization implements OnInit, OnDestroy {
       .attr('fill', 'blue');
     //disegna i nodi di destinazione
     const nodiDestinazione = this.svg.selectAll('.node-destination')
-      .data(this.destination)
+      .data(this.destinations)
       .enter()
       .append('g')
       .attr('class', 'node-destination')
@@ -439,31 +439,35 @@ nodiDestinazione.on('mouseover', handleMouseOver)
     console.log('barycenter', barycenterOrder);
     barycenterOrder.sort((a, b) => a.median - b.median);
     let i = 0;
-    barycenterOrder.forEach((item: any) => {
+    for(let item of barycenterOrder) {
       optimizedMatrix.push(matrix[item.index]);
       if (typeof type !== 'undefined') {
         switch (type) {
           case 0: // origin
-            this.origins.forEach((origin: any) => {
-              if (origin.posizione === item.index) {
-                origin.posizione = i;
+            for(let origin of this.origins) {
+              if (origin.pos == item.index && i < this.origins.size) {
+                console.log('prima',origin);
+                this.origins.delete(origin);
+                origin.pos = i;
+                this.origins.add(origin);
+                console.log('dopo', origin);
                 i++;
-                return;
+                break;
               }
-            })
+            }
             break
           case 1: // destination
-            this.destination.forEach((destination: any) => {
-              if (destination.posizione === item.index) {
-                destination.posizione = i;
+            for(let destination of this.destinations) {
+              if (destination.pos === item.index) {
+                destination.pos = i;
                 i++;
-                return
+                break
               }
-            })
+            }
             break;
         }
       }
-    });
+    }
     return optimizedMatrix;
   }
 }
