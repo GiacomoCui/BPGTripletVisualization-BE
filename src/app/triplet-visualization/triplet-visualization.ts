@@ -7,10 +7,11 @@ import {DrawGraph} from './draw-graph';
 
 
 export type Node = {
-  ASNumber: number;
+  ASNumber: number | null;
   pos: number; // position in the rappresentation
   role: number // 0 = origin, 1 = destination
-  aggregated?: Node[] | null // for collapsed nodes
+  children?: Node[] | null // for collapsed nodes
+  _children?: Node[] | null // for collapsed nodes
   name?: string | null; // for collapsed nodes
 };
 
@@ -123,8 +124,11 @@ export class TripletVisualization implements OnInit, OnDestroy {
         if (data && data.length > 0) {
           this.peerInfo = data;
           this.fillMatrix(data);
-          let mat = this.optimizeAllMatrix(this.collisionMatrix)
-          console.log(mat);
+          let mat = this.optimizeAllMatrix(this.collisionMatrix);
+          mat = this.collapseAllMatrix(mat)
+          console.log('Final Matrix: ', mat);
+          console.log('Origins: ', this.origins);
+          console.log('Destinations: ', this.destinations);
           this.drawGraph(mat, this.hiveSelected);
         } else {
           this.messageService.add({severity: 'info', summary: 'Info', detail: 'No triplets found'});
@@ -165,13 +169,12 @@ export class TripletVisualization implements OnInit, OnDestroy {
       }
     }
     for (let i = 0; i < asOrigin.size; i++) {
-      this.origins.add({ASNumber: Number(originsArr[i]), pos: i, role: 0, name: originsArr[i]});
+      this.origins.add({ASNumber: Number(originsArr[i]), pos: i, role: 0});
     }
     for (let i = 0; i < asDestination.size; i++) {
-      this.destinations.add({ASNumber: Number(destinationArr[i]), pos: i, role: 1, name: originsArr[i]});
+      this.destinations.add({ASNumber: Number(destinationArr[i]), pos: i, role: 1});
     }
   }
-
 
   drawGraph(mat: any, hiveSelected: boolean) {
     this.drawService.chooseGraph(mat, hiveSelected, this.origins, this.destinations);
@@ -185,8 +188,15 @@ export class TripletVisualization implements OnInit, OnDestroy {
     return matrix;
   }
 
+  collapseAllMatrix(matrix: any[]) {
+    matrix = this.aggregateNode(matrix, 1);
+    matrix = matrix[0].map((_: any, colIndex: number) => matrix.map((row: any) => row[colIndex]));
+    matrix = this.aggregateNode(matrix, 0);
+    matrix = matrix[0].map((_: any, colIndex: number) => matrix.map((row: any) => row[colIndex]));
+    return matrix;
+  }
+
   optimizeMatrix(matrix: any[][], type?: 0 | 1): any[][] {
-    // aggrega i nodi e salva i valori corrispondenti
     let optimizedMatrix: any[][] = [];
     let barycenterOrder: any[] = [];
     matrix.forEach((col: any, i: number) => {
@@ -232,42 +242,87 @@ export class TripletVisualization implements OnInit, OnDestroy {
         }
       }
     }
-    optimizedMatrix = this.aggregateNode(optimizedMatrix)
     return optimizedMatrix;
   }
 
-  aggregateNode(mat: any[]): any[] {
+  aggregateNode(mat: any[], type?: 0 | 1): any[] {
     let aggregatedMatrix: any[] = mat;
     let visited = false;
     let nodeList: Node[] = [];
     //controlla se ci sono colonne uguali in mat, dove mat è una matrice di booleani
-    for (let i = 0; i < mat.length; i++) {
+    for (let i = 0; i < aggregatedMatrix.length; i++) {
       nodeList = [];
       visited = false;
-      for (let j = i + 1; j < mat.length; j++) {
-        if (JSON.stringify(mat[i]) === JSON.stringify(mat[j])) {
-          //pusha il nodo corrispondente alla posizione j
-          nodeList.push();
+      for (let j = i + 1; j < aggregatedMatrix.length; j++) {
+        if (JSON.stringify(aggregatedMatrix[i]) === JSON.stringify(aggregatedMatrix[j])) {
+          if (type == 0) {
+            for (let origin of this.origins) {
+              if (origin.pos == j) {
+                nodeList.push(origin);
+                this.origins.delete(origin);
+              }
+            }
+          } else if (type == 1) {
+            for (let destination of this.destinations) {
+              if (destination.pos == j) {
+                nodeList.push(destination);
+                this.destinations.delete(destination);
+              }
+            }
+          }
+          aggregatedMatrix.splice(j, 1);
+          //tutti i nodi che hanno una posizione sopra a j devono essere decrementati di 1
+          if (type === 0) {
+            for (let origin of this.origins) {
+              if (origin.pos > j) {
+                this.origins.delete(origin);
+                origin.pos = origin.pos - 1;
+                this.origins.add(origin);
+              }
+            }
+          } else if (type === 1) {
+            for (let destination of this.destinations) {
+              if (destination.pos > j) {
+                this.destinations.delete(destination);
+                destination.pos = destination.pos - 1;
+                this.destinations.add(destination);
+              }
+            }
+          }
+          j--;
           visited = true;
         }
       }
       if (visited) {
-        nodeList.push(mat[i])
-        //TODO: trovare una buona struttura per il nodo aggregato
-        let aggrNode: Node = {
-          ASNumber: -1,
+        if (type === 0) {
+          const origin = Array.from(this.origins).find(o => o.pos === i);
+          if (origin) nodeList.push(origin);
+        } else if (type === 1) {
+          const destination = Array.from(this.destinations).find(d => d.pos === i);
+          if (destination) nodeList.push(destination);
+        }
+        let aggregatedNode: Node = {
+          ASNumber: -i,
           pos: i,
-          role: 0,
-          aggregated: nodeList,
+          role: type === 0 ? 0 : 1,
+          children: nodeList,
+          _children: null,
           name: `Aggregated ${nodeList.length} nodes`
         };
-        //elimina le righe duplicate
-        aggregatedMatrix = aggregatedMatrix.filter((_, index) => !nodeList.includes(mat[index]));
-        //aggiungi la riga aggregata
-        aggregatedMatrix.splice(i, 0, aggrNode);
+        if (type === 0) {
+          for (let node of nodeList) {
+            this.origins.delete(node);
+          }
+          this.origins.add(aggregatedNode);
+        }else if (type === 1) {
+          for (let node of nodeList) {
+            this.destinations.delete(node);
+          }
+          this.destinations.add(aggregatedNode);
+        }
       }
     }
-    return aggregatedMatrix; //TODO: cambiare con aggregatedMatrix quando la funzione decide di funzionare
+    return aggregatedMatrix;
   }
 
   ngOnDestroy(): void {

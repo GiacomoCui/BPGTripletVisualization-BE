@@ -1,10 +1,11 @@
 import * as d3 from 'd3';
 
 export type Node = {
-  ASNumber: number;
+  ASNumber: number | null;
   pos: number; // position in the rappresentation
   role: number // 0 = origin, 1 = destination
-  aggregated?: Node[] | null // for collapsed nodes
+  children?: Node[] | null // for collapsed nodes
+  _children?: Node[] | null // for collapsed nodes
   name?: string | null; // for collapsed nodes
 };
 
