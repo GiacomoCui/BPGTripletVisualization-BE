@@ -246,6 +246,8 @@ export class TripletVisualization implements OnInit, OnDestroy {
   }
 
   aggregateNode(mat: any[], type?: 0 | 1): any[] {
+    let originForAggregation: Set<Node> = new Set(Array.from(this.origins).map(node => ({...node})));
+    let destinationForAggregation: Set<Node> = new Set(Array.from(this.destinations).map(node => ({...node})));
     let aggregatedMatrix: any[] = mat;
     let visited = false;
     let nodeList: Node[] = [];
@@ -256,36 +258,36 @@ export class TripletVisualization implements OnInit, OnDestroy {
       for (let j = i + 1; j < aggregatedMatrix.length; j++) {
         if (JSON.stringify(aggregatedMatrix[i]) === JSON.stringify(aggregatedMatrix[j])) {
           if (type == 0) {
-            for (let origin of this.origins) {
+            for (let origin of originForAggregation) {
               if (origin.pos == j) {
-                nodeList.push(origin);
-                this.origins.delete(origin);
+                let newOr = Array.from(this.origins).find(o => o.ASNumber === origin.ASNumber);
+                nodeList.push(newOr as Node);
+                originForAggregation.delete(origin);
               }
             }
           } else if (type == 1) {
-            for (let destination of this.destinations) {
+            for (let destination of destinationForAggregation) {
               if (destination.pos == j) {
-                nodeList.push(destination);
-                this.destinations.delete(destination);
+                let newDest = Array.from(this.destinations).find(o => o.ASNumber === destination.ASNumber);
+                nodeList.push(newDest as Node)
+                destinationForAggregation.delete(destination);
               }
             }
           }
           aggregatedMatrix.splice(j, 1);
           //tutti i nodi che hanno una posizione sopra a j devono essere decrementati di 1
           if (type === 0) {
-            for (let origin of this.origins) {
+            for (let origin of originForAggregation) {
               if (origin.pos > j) {
-                this.origins.delete(origin);
+                originForAggregation.delete(origin);
                 origin.pos = origin.pos - 1;
-                this.origins.add(origin);
+                originForAggregation.add(origin);
               }
             }
           } else if (type === 1) {
-            for (let destination of this.destinations) {
+            for (let destination of destinationForAggregation) {
               if (destination.pos > j) {
-                this.destinations.delete(destination);
                 destination.pos = destination.pos - 1;
-                this.destinations.add(destination);
               }
             }
           }
@@ -295,10 +297,10 @@ export class TripletVisualization implements OnInit, OnDestroy {
       }
       if (visited) {
         if (type === 0) {
-          const origin = Array.from(this.origins).find(o => o.pos === i);
+          const origin = Array.from(originForAggregation).find(o => o.pos === i);
           if (origin) nodeList.push(origin);
         } else if (type === 1) {
-          const destination = Array.from(this.destinations).find(d => d.pos === i);
+          const destination = Array.from(destinationForAggregation).find(d => d.pos === i);
           if (destination) nodeList.push(destination);
         }
         let aggregatedNode: Node = {
@@ -311,17 +313,19 @@ export class TripletVisualization implements OnInit, OnDestroy {
         };
         if (type === 0) {
           for (let node of nodeList) {
-            this.origins.delete(node);
+            originForAggregation.delete(node);
           }
-          this.origins.add(aggregatedNode);
-        }else if (type === 1) {
+          originForAggregation.add(aggregatedNode);
+        } else if (type === 1) {
           for (let node of nodeList) {
-            this.destinations.delete(node);
+            destinationForAggregation.delete(node);
           }
-          this.destinations.add(aggregatedNode);
+          destinationForAggregation.add(aggregatedNode);
         }
       }
     }
+    this.origins = originForAggregation;
+    this.destinations = destinationForAggregation;
     return aggregatedMatrix;
   }
 
