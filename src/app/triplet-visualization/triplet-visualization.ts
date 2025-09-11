@@ -12,7 +12,8 @@ export type Node = {
   role: number // 0 = origin, 1 = destination
   children?: Node[] | null // for collapsed nodes
   _children?: Node[] | null // for collapsed nodes
-  name?: string | null; // for collapsed nodes
+  name?: string | null // for collapsed nodes
+  aggregation?: number | null// number of nodes collapsed
 };
 
 @Component({
@@ -309,7 +310,8 @@ export class TripletVisualization implements OnInit, OnDestroy {
           role: type === 0 ? 0 : 1,
           children: nodeList,
           _children: null,
-          name: `Aggregated ${nodeList.length} nodes`
+          name: `Aggregated ${nodeList.length} nodes`,
+          aggregation: nodeList.length
         };
         if (type === 0) {
           for (let node of nodeList) {

@@ -7,7 +7,8 @@ export type Node = {
   children?: Node[] | null // for collapsed nodes
   _children?: Node[] | null // for collapsed nodes
   name?: string | null; // for collapsed nodes
-};
+  aggregation?: number | null  // number of nodes collapsed
+   };
 
 export type Links = {
   origin: Node;
@@ -38,6 +39,7 @@ export class DrawGraph {
   private drawClassicGraph(mat: Node[][], origins: Set<Node>, destinations: Set<Node>) {
     if (this.svg) {
       d3.select(this.element).select('svg').remove();
+      d3.select(this.element).select('div.tooltip').remove();
     }
 
     let links: Links[] = [];
@@ -64,6 +66,10 @@ export class DrawGraph {
       .domain([0, 1])
       .range([0, 300]);
 
+    const color = d3.scaleSequential(d3.interpolateTurbo);
+    color.domain([0, 20]); //TODO: trovare una buona maniera per identificare i link più "Numerosi"
+
+
     this.svg.append('line')
       .attr('x1', xScale(0))
       .attr('y1', yScale(0))
@@ -75,7 +81,7 @@ export class DrawGraph {
       .attr('y1', yScale(1))
       .attr('x2', xScale(xLength))
       .attr('y2', yScale(1))
-      .attr('stroke', 'black');
+      .attr('stroke', 'black')
 
     const nodi = this.svg.selectAll('.node')
       .data(origins)
@@ -116,11 +122,12 @@ export class DrawGraph {
         const angle = Math.atan2(dy, dx);
         return yScale(1) - 5 * Math.sin(angle);
       })
-      .attr('stroke', 'gray')
-      .attr('stroke-width', 1)
-      .attr('marker-end', 'url(#arrowhead)');
+      .attr('stroke', (d: Links) => color((d.origin.aggregation ?? 0) + (d.destination.aggregation ?? 0))) // TODO: cambiare colore in base al numero di connessioni
+      // .attr('marker-end', 'url(#arrowhead)')
+      .attr('stroke-width', 1);
 
-    // Definizione della freccia
+
+/*    // Definizione della freccia
     this.svg.append('defs').append('marker')
       .attr('id', 'arrowhead')
       .attr('viewBox', '0 -5 10 10')
@@ -131,7 +138,7 @@ export class DrawGraph {
       .attr('markerHeight', 6)
       .append('path')
       .attr('d', 'M0,-5L10,0L0,5')
-      .attr('fill', 'black');
+      .attr('fill', 'black');*/
 
     const Tooltip = d3.select(this.element)
       .append("div")
@@ -153,7 +160,7 @@ export class DrawGraph {
 
     function handleMouseMove(event: any, d: Node) {
       Tooltip
-        .html("AS Number: " + d.ASNumber)
+        .html(d.name ?? "AS Number: " + (d.ASNumber ?? "Unknown"))
         .style("position", "absolute")
         .style("left", (event.pageX + 10) + "px")
         .style("top", (event.pageY - 20) + "px")
