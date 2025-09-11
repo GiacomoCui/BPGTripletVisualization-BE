@@ -1,8 +1,8 @@
 <div class="m-5">
   <form [formGroup]="netForm" novalidate>
-    <p-fieldset legend="Header" [toggleable]="true" [collapsed]="isCollapsed">
+    <p-fieldset legend="Filter" [toggleable]="true" [collapsed]="isCollapsed">
       <div class="mt-2 grid flex">
-        <div class="flex-column col-4 md:col-4">
+        <div class="flex-column lg:mt-0 mt-3 col-12 lg:col-4">
           <p-floatlabel>
             <input pInputText required id="source" [maxlength]="6"
                    formControlName="asNumber" pKeyFilter="pint" (blur)="searchAvailableCPs()"/>
@@ -10,7 +10,7 @@
           </p-floatlabel>
         </div>
         @if (availableCPs != null && availableCPs.length > 0) {
-          <div class="col-4 flex-column md:col-4">
+          <div class="col-12 lg:mt-0 mt-3 flex-column lg:col-4">
             <p-floatlabel>
               <p-select class="w-5" formControlName="peerAS" [options]="availableCPs" (onClick)="showPeers()"
                         [optionLabel]="'label'" [showClear]="true" [filter]="true"></p-select>
@@ -19,7 +19,7 @@
           </div>
         }
         @if (ipForPeerSelected != null && ipForPeerSelected.length > 0) {
-          <div class="col-4 flex-column md:col-4">
+          <div class="col-12 lg:mt-0 mt-3 flex-column lg:col-4">
             <p-floatlabel>
               <p-select class="w-5" formControlName="peerIP" [options]="ipForPeerSelected"
                         (onChange)="searchVisibility()"
@@ -27,31 +27,35 @@
               <label>Available Peers</label>
             </p-floatlabel>
           </div>
-          <div class="col-4 flex-column md:col-4">
+          <div class="col-12 mt-3 flex-column lg:col-4">
             <p-floatlabel>
               <p-multi-select class="w-5" formControlName="queryFamily" [options]="queryFamily"
                               [optionLabel]="'name'"></p-multi-select>
               <label>IP Family</label>
             </p-floatlabel>
           </div>
-          <div class="flex-column align-content-center col-4 md:col-4">
-            <span>
-              <p-check-box [value]="hiveSelected" [binary]="true" (onChange)="hiveSelected = !hiveSelected"/>
-                <label for="hiveSelected">Visualizzazione Hive</label>
-            </span>
+          <div class="flex align-items-center mt-3 col-4 md:col-4">
+            <label class="mr-2 mb-0" for="hiveSelected" style="line-height: 1.5;">Visualizzazione Hive</label>
+            <p-check-box [value]="hiveSelected" [binary]="true" (onChange)="hiveSelected = !hiveSelected"/>
           </div>
         }
       </div>
-      <div class="col-4 md:col-4">
+      <div class="col-4 mt-3 md:col-4">
+        <p-toast/>
         <p-button label="Search" icon="pi pi-search" [disabled]="!ableSearch" class="w-5"
                   (click)="searchTriplets()"></p-button>
       </div>
     </p-fieldset>
   </form>
 </div>
-
-<div class="pi flex justify-content-center">
-  <div #myDataVis>
+<div class="grid">
+  <div class="col-12 justify justify-content-end pi flex">
+    <div class="mr-4" #myDataLegend>
+    </div>
+  </div>
+  <div class="col-12 justify-content-center pi flex">
+    <div #myDataVis>
+    </div>
   </div>
 </div>
 

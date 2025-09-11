@@ -17,17 +17,22 @@ export type Links = {
 
 export class DrawGraph {
   private svg: any;
+  private colorScale: any;
   private element: any;
+  private elementLegend: any;
   private nodeSelected: Node | null = null;
   private nodeSelectedDestination: Node | null = null;
+  private domain: [number, number] = [0, 50]; // Dominio per la scala di colori
 
-  constructor(element: any) {
+  constructor(element: any, elementLegend: any) {
     this.element = element;
+    this.elementLegend = elementLegend;
   }
 
   chooseGraph(mat: any, hiveSelected: boolean, origins: Set<Node>, destinations: Set<Node>) {
     this.nodeSelected = null;
     this.nodeSelectedDestination = null;
+    this.drawLegend()
 
     if (hiveSelected) {
       this.drawHiveGraph(mat, origins, destinations);
@@ -65,10 +70,6 @@ export class DrawGraph {
     const yScale = d3.scaleLinear()
       .domain([0, 1])
       .range([0, 300]);
-
-    const color = d3.scaleSequential(d3.interpolateTurbo);
-    color.domain([0, 20]); //TODO: trovare una buona maniera per identificare i link più "Numerosi"
-
 
     this.svg.append('line')
       .attr('x1', xScale(0))
@@ -122,7 +123,7 @@ export class DrawGraph {
         const angle = Math.atan2(dy, dx);
         return yScale(1) - 5 * Math.sin(angle);
       })
-      .attr('stroke', (d: Links) => color((d.origin.aggregation ?? 0) + (d.destination.aggregation ?? 0))) // TODO: cambiare colore in base al numero di connessioni
+      .attr('stroke', (d: Links) => this.colorScale((d.origin.aggregation ?? 0) + (d.destination.aggregation ?? 0))) // TODO: cambiare colore in base al numero di connessioni
       // .attr('marker-end', 'url(#arrowhead)')
       .attr('stroke-width', 1);
 
@@ -224,5 +225,60 @@ export class DrawGraph {
       origin: this.nodeSelected,
       destination: this.nodeSelectedDestination
     };
+  }
+
+  drawLegend() {
+    if(this.elementLegend) {
+      d3.select(this.elementLegend).select('svg').remove();
+    }
+    const legendWidth = 300;
+    const legendHeight = 20;
+    this.colorScale = d3.scaleSequential()
+      .domain(this.domain)  // I tuoi valori min/max
+      .interpolator(d3.interpolateTurbo);
+
+    const svgLegend = d3.select(this.elementLegend).append('svg')
+      .attr("width", legendWidth + 50)
+      .attr("height", legendHeight + 40);
+
+
+    const legendContainer = svgLegend.append("g")
+      .attr("transform", "translate(25, 10)");
+
+    const domain = this.colorScale.domain();
+    const legendData = d3.range(legendWidth).map(i => {
+      const t = i / (legendWidth - 1);
+      return domain[0] + t * (domain[1] - domain[0]);
+    });
+
+    legendContainer.selectAll("rect")
+      .data(legendData)
+      .enter().append("rect")
+      .attr("x", (d, i) => i)
+      .attr("y", 0)
+      .attr("width", 1)
+      .attr("height", legendHeight)
+      .style("fill", d => this.colorScale(d));
+
+    const axis = d3.axisBottom(
+      d3.scaleLinear()
+        .domain(domain)
+        .range([0, legendWidth])
+    ).ticks(5);
+
+    legendContainer.append("g")
+      .attr("transform", `translate(0, ${legendHeight})`)
+      .call(axis);
+  }
+
+  deleteAll() {
+    //elimina tutti gli svg
+    if (this.svg) {
+      d3.select(this.element).select('svg').remove();
+      d3.select(this.element).select('div.tooltip').remove();
+    }
+    if(this.elementLegend) {
+      d3.select(this.elementLegend).select('svg').remove();
+    }
   }
 }

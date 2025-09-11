@@ -7,10 +7,12 @@ import {Select} from "primeng/select";
 import {Card} from "primeng/card";
 import {Divider} from 'primeng/divider';
 import {Tooltip} from 'primeng/tooltip';
+import {Message} from "primeng/message";
+import {Toast} from 'primeng/toast';
 
 @NgModule({
   declarations: [TripletVisualization],
-  imports: [CommonModule, SharedLibModule, Checkbox, Select, Card, Divider, Tooltip],
+  imports: [CommonModule, SharedLibModule, Checkbox, Select, Card, Divider, Tooltip, Message, Toast],
   exports: [TripletVisualization],
 })
 export class TripletVisualizationModule {}

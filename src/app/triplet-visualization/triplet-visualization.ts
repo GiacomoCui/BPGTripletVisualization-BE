@@ -4,6 +4,7 @@ import {TripletVisualizationService} from '../services/triplet-visualization.ser
 import {Subscription} from 'rxjs';
 import {MessageService} from 'primeng/api';
 import {DrawGraph} from './draw-graph';
+import * as d3 from 'd3';
 
 
 export type Node = {
@@ -48,6 +49,7 @@ export class TripletVisualization implements OnInit, OnDestroy {
   queryFamily: any = [{name: 'IPv4', value: 4}, {name: 'IPv6', value: 6}];
 
   @ViewChild('myDataVis', {static: true}) private chartContainer!: ElementRef;
+  @ViewChild('myDataLegend', {static: true}) private legendContainer!: ElementRef;
   private svg: any;
 
 
@@ -64,7 +66,8 @@ export class TripletVisualization implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const element = this.chartContainer.nativeElement;
-    this.drawService = new DrawGraph(element);
+    const elementLegend = this.legendContainer.nativeElement;
+    this.drawService = new DrawGraph(element, elementLegend);
   }
 
   searchAvailableCPs() {
@@ -127,12 +130,12 @@ export class TripletVisualization implements OnInit, OnDestroy {
           this.fillMatrix(data);
           let mat = this.optimizeAllMatrix(this.collisionMatrix);
           mat = this.collapseAllMatrix(mat)
-          console.log('Final Matrix: ', mat);
-          console.log('Origins: ', this.origins);
-          console.log('Destinations: ', this.destinations);
           this.drawGraph(mat, this.hiveSelected);
+          this.isCollapsed = true;
         } else {
-          this.messageService.add({severity: 'info', summary: 'Info', detail: 'No triplets found'});
+          console.log('No Data Found');
+          this.messageService.add({severity: 'error', summary: 'Info', detail: 'No triplets found'});
+          this.drawService.deleteAll()
         }
       },
       error: (error) => {
