@@ -5,6 +5,7 @@ import {Subscription} from 'rxjs';
 import {MessageService} from 'primeng/api';
 import {DrawGraph} from './draw-graph';
 import * as d3 from 'd3';
+import {ContextMenu} from 'primeng/contextmenu';
 
 
 export type Node = {
@@ -50,7 +51,9 @@ export class TripletVisualization implements OnInit, OnDestroy {
 
   @ViewChild('myDataVis', {static: true}) private chartContainer!: ElementRef;
   @ViewChild('myDataLegend', {static: true}) private legendContainer!: ElementRef;
+  @ViewChild('cm')  private nodeMenu!: ContextMenu
   private svg: any;
+   items: any[] = [];
 
 
   constructor(private formBuilder: FormBuilder,
@@ -67,7 +70,11 @@ export class TripletVisualization implements OnInit, OnDestroy {
   ngOnInit(): void {
     const element = this.chartContainer.nativeElement;
     const elementLegend = this.legendContainer.nativeElement;
-    this.drawService = new DrawGraph(element, elementLegend);
+    this.drawService = new DrawGraph(element, elementLegend, this.nodeMenu);
+    this.items = [
+      { label: 'Copy', icon: 'pi pi-copy' },
+      { label: 'Rename', icon: 'pi pi-file-edit' }
+    ];
   }
 
   searchAvailableCPs() {
@@ -131,7 +138,6 @@ export class TripletVisualization implements OnInit, OnDestroy {
           let mat = this.optimizeAllMatrix(this.collisionMatrix);
           mat = this.collapseAllMatrix(mat)
           this.drawGraph(mat, this.hiveSelected);
-          this.isCollapsed = true;
         } else {
           console.log('No Data Found');
           this.messageService.add({severity: 'error', summary: 'Info', detail: 'No triplets found'});
@@ -143,6 +149,7 @@ export class TripletVisualization implements OnInit, OnDestroy {
         this.messageService.add({severity: 'error', summary: 'Error', detail: 'Failed to fetch triplets'});
       }
     });
+    this.isCollapsed = true;
   }
 
   fillMatrix(triplet: any) {

@@ -19,19 +19,21 @@ export class DrawGraph {
   private svg: any;
   private colorScale: any;
   private element: any;
-  private elementLegend: any;
-  private nodeSelected: Node | null = null;
-  private nodeSelectedDestination: Node | null = null;
+  readonly elementLegend: any;
+  private originSelected: Node | null = null;
+  private destinationSelected: Node | null = null;
   private domain: [number, number] = [0, 50]; // Dominio per la scala di colori
+  nodeMenu: any;
 
-  constructor(element: any, elementLegend: any) {
+  constructor(element: any, elementLegend: any, nodeMenu: any) {
     this.element = element;
     this.elementLegend = elementLegend;
+    this.nodeMenu = nodeMenu;
   }
 
   chooseGraph(mat: any, hiveSelected: boolean, origins: Set<Node>, destinations: Set<Node>) {
-    this.nodeSelected = null;
-    this.nodeSelectedDestination = null;
+    this.originSelected = null;
+    this.destinationSelected = null;
     this.drawLegend()
 
     if (hiveSelected) {
@@ -57,7 +59,7 @@ export class DrawGraph {
     }
 
     let xLength = Math.max(origins.size, destinations.size);
-    let margin = {top: 20, right: 30, bottom: 30, left: 40};
+    let margin = {top: 20, right: 30, bottom: 20, left: 30};
     this.svg = d3.select(this.element).append('svg')
       .attr("width", 900)
       .attr("height", 400)
@@ -76,13 +78,15 @@ export class DrawGraph {
       .attr('y1', yScale(0))
       .attr('x2', xScale(xLength))
       .attr('y2', yScale(0))
-      .attr('stroke', 'black')
+      .attr('stroke', 'blue')
+      .attr('stroke-dasharray', '5,5')
     this.svg.append('line')
       .attr('x1', xScale(0))
       .attr('y1', yScale(1))
       .attr('x2', xScale(xLength))
       .attr('y2', yScale(1))
-      .attr('stroke', 'black')
+      .attr('stroke', 'red')
+      .attr('stroke-dasharray', '5,5')
 
     const nodi = this.svg.selectAll('.node')
       .data(origins)
@@ -110,7 +114,7 @@ export class DrawGraph {
       .append('line')
       .attr('class', 'link')
       .attr('x1', (d: Links) => xScale(d.origin.pos))
-      .attr('y1', (d: Links) => yScale(0) + 5)
+      .attr('y1', () => yScale(0) + 5)
       .attr('x2', (d: Links) => {
         const dx = xScale(d.destination.pos) - xScale(d.origin.pos);
         const dy = yScale(1) - yScale(0);
@@ -184,33 +188,33 @@ export class DrawGraph {
       .on('mouseout', handleMouseOut);
 
     nodi.on('click', (event: any, d: Node) => {
-      if (this.nodeSelected === d) {
+      if (this.originSelected === d) {
         d3.select(event.target).attr('fill', 'blue');
-        this.nodeSelected = null;
+        this.originSelected = null;
         return;
       }
 
-      if (this.nodeSelected !== null) {
+      if (this.originSelected !== null) {
         this.svg.selectAll('.node circle').attr('fill', 'blue');
       }
 
       d3.select(event.target).attr('fill', 'orange');
-      this.nodeSelected = d;
+      this.originSelected = d;
     })
 
     nodiDestinazione.on('click', (event: any, d: Node) => {
-      if (this.nodeSelectedDestination === d) {
+      if (this.destinationSelected === d) {
         d3.select(event.target).attr('fill', 'red');
-        this.nodeSelectedDestination = null;
+        this.destinationSelected = null;
         return;
       }
 
-      if (this.nodeSelectedDestination !== null) {
+      if (this.destinationSelected !== null) {
         this.svg.selectAll('.node-destination circle').attr('fill', 'red');
       }
 
       d3.select(event.target).attr('fill', 'orange');
-      this.nodeSelectedDestination = d;
+      this.destinationSelected = d;
     })
   }
 
@@ -222,8 +226,8 @@ export class DrawGraph {
 
   getSelectedNodes(): { origin: Node | null, destination: Node | null } {
     return {
-      origin: this.nodeSelected,
-      destination: this.nodeSelectedDestination
+      origin: this.originSelected,
+      destination: this.destinationSelected
     };
   }
 

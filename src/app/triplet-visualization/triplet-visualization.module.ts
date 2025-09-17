@@ -9,10 +9,11 @@ import {Divider} from 'primeng/divider';
 import {Tooltip} from 'primeng/tooltip';
 import {Message} from "primeng/message";
 import {Toast} from 'primeng/toast';
+import {ContextMenu} from "primeng/contextmenu";
 
 @NgModule({
   declarations: [TripletVisualization],
-  imports: [CommonModule, SharedLibModule, Checkbox, Select, Card, Divider, Tooltip, Message, Toast],
+    imports: [CommonModule, SharedLibModule, Checkbox, Select, Card, Divider, Tooltip, Message, Toast, ContextMenu],
   exports: [TripletVisualization],
 })
 export class TripletVisualizationModule {}

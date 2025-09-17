@@ -3,3 +3,73 @@ $gutter: 1rem;
 /* PrimeNG */
 @use "primeflex/primeflex.scss";
 @use "primeicons/primeicons.css";
+
+:root {
+  --primary-color: #153a59;
+  --primary-color-2: #008B8B;
+  --primary-color-3: #0096D6;
+  --secondary-color: #2C3E50;
+  --secondary-color-rgb: 127, 140, 141;
+  --secondary-color-2: #7F8C8D;
+  --secondary-color-3: #ECF0F1;
+  --accent-color: #F39C12;
+  --success-color: #27AE60;
+  --error-color: #E74C3C;
+
+  --font-family-title-main: 'Inter Bold';
+  --font-size-title-main: 32px;
+  --font-size-title-main-lg: 36px;
+
+  --font-family-title-section: 'Inter Semi-Bold';
+  --font-size-title-section: 24px;
+  --font-size-title-section-lg: 28px;
+
+  --font-family-subtitle: 'Inter Medium';
+  --font-size-subtitle: 18px;
+  --font-size-subtitle-lg: 20px;
+
+  --font-family-body: 'Inter Regular';
+  --font-size-body: 14px;
+  --font-size-body-lg: 16px;
+
+  --font-family-numeric: 'Roboto Regular';
+  --font-size-numeric: 12px;
+  --font-size-numeric-lg: 14px;
+
+  --font-family-caption: 'Inter Light';
+  --font-size-caption: 11px;
+  --font-size-caption-lg: 12px;
+
+}
+
+body {
+  font-family: var(--font-family-body), sans-serif;
+  font-size: var(--font-size-body);
+  color: var(--secondary-color);
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  background-color: var(--secondary-color-3);
+}
+
+.title {
+  font-family: var(--font-family-title-main), sans-serif;
+  font-size: var(--font-size-title-main);
+  color: var(--primary-color);
+  margin-bottom: $gutter;
+}
+
+.custom-btn-bg .p-button {
+  background-color: var(--primary-color-2) !important;
+  color: #fff;
+}
+
+input:focus{
+  box-shadow: none !important;
+  border-color: var(--primary-color-2) !important;
+}
+
+p-dropdown:focus {
+  box-shadow: none !important;
+  border-color: var(--primary-color-2) !important;
+}

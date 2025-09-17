@@ -1,3 +1,7 @@
-<p-menubar [model]="menuItems" class="navbar" (click)="onMenuItemClick($event)"></p-menubar>
+<p-menubar [model]="menuItems" class="navbar" (click)="onMenuItemClick($event)">
+  <ng-template #end>
+    Button For Dark Mode
+  </ng-template>
+</p-menubar>
 
 <router-outlet></router-outlet>

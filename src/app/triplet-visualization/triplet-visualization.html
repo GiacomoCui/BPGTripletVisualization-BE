@@ -1,61 +1,83 @@
-<div class="m-5">
-  <form [formGroup]="netForm" novalidate>
-    <p-fieldset legend="Filter" [toggleable]="true" [collapsed]="isCollapsed">
-      <div class="mt-2 grid flex">
-        <div class="flex-column lg:mt-0 mt-3 col-12 lg:col-4">
-          <p-floatlabel>
-            <input pInputText required id="source" [maxlength]="6"
-                   formControlName="asNumber" pKeyFilter="pint" (blur)="searchAvailableCPs()"/>
-            <label>AS Number</label>
-          </p-floatlabel>
+<div class="grid mt-4 mr-6 ml-6 mb-8">
+  <div class="col-12 lg:col-3">
+    <div class="ml-2 text-xl">
+      <h1>Triplet from ASes</h1>
+      <p>
+        Lorem ipsum dolor sit amet,
+        consectetur adipiscing elit.
+        Sed euismod, urna eu tincidunt consectetur,
+        nisi nisl aliquam eros,
+        a facilisis enim leo nec urna.<br>
+      </p>
+    </div>
+    <form [formGroup]="netForm" novalidate>
+      <p-fieldset class="pl-2" legend="Filter" [toggleable]="true" [collapsed]="isCollapsed"
+                  (onAfterToggle)="isCollapsed = false">
+        <div class="mt-1 ml-3 grid">
+          <div class="flex-column mt-3 col-12">
+            <p-floatlabel>
+              <input pInputText required id="source" [maxlength]="6" class="w-6 custom-text"
+                     formControlName="asNumber" pKeyFilter="pint" (blur)="searchAvailableCPs()"/>
+              <label>AS Number</label>
+            </p-floatlabel>
+          </div>
+          @if (availableCPs != null && availableCPs.length > 0) {
+            <div class="flex-column mt-3 col-12">
+              <p-floatlabel>
+                <p-select class="w-6" formControlName="peerAS" [options]="availableCPs" (onClick)="showPeers()"
+                          [optionLabel]="'label'" [showClear]="true" [filter]="true"></p-select>
+                <label>Available CPs</label>
+              </p-floatlabel>
+            </div>
+          }
+          @if (ipForPeerSelected != null && ipForPeerSelected.length > 0) {
+            <div class="col-12 mt-3 flex-column">
+              <p-floatlabel>
+                <p-select class="w-6" formControlName="peerIP" [options]="ipForPeerSelected"
+                          (onChange)="searchVisibility()"
+                          [optionLabel]="'label'" [showClear]="true" [filter]="true"></p-select>
+                <label>Available Peers</label>
+              </p-floatlabel>
+            </div>
+            <div class="col-12 mt-3 flex-column">
+              <p-floatlabel>
+                <p-multi-select class="w-6" formControlName="queryFamily" [options]="queryFamily"
+                                [optionLabel]="'name'"></p-multi-select>
+                <label>IP Family</label>
+              </p-floatlabel>
+            </div>
+            <div class="flex align-items-center mt-3 col-4 ">
+              <label class="mr-5 mb-0" for="hiveSelected" style="line-height: 1.5;">Visualizzazione Hive</label>
+              <p-check-box [value]="hiveSelected" [binary]="true" (onChange)="hiveSelected = !hiveSelected"/>
+            </div>
+          }
         </div>
-        @if (availableCPs != null && availableCPs.length > 0) {
-          <div class="col-12 lg:mt-0 mt-3 flex-column lg:col-4">
-            <p-floatlabel>
-              <p-select class="w-5" formControlName="peerAS" [options]="availableCPs" (onClick)="showPeers()"
-                        [optionLabel]="'label'" [showClear]="true" [filter]="true"></p-select>
-              <label>Available CPs</label>
-            </p-floatlabel>
-          </div>
-        }
-        @if (ipForPeerSelected != null && ipForPeerSelected.length > 0) {
-          <div class="col-12 lg:mt-0 mt-3 flex-column lg:col-4">
-            <p-floatlabel>
-              <p-select class="w-5" formControlName="peerIP" [options]="ipForPeerSelected"
-                        (onChange)="searchVisibility()"
-                        [optionLabel]="'label'" [showClear]="true" [filter]="true"></p-select>
-              <label>Available Peers</label>
-            </p-floatlabel>
-          </div>
-          <div class="col-12 mt-3 flex-column lg:col-4">
-            <p-floatlabel>
-              <p-multi-select class="w-5" formControlName="queryFamily" [options]="queryFamily"
-                              [optionLabel]="'name'"></p-multi-select>
-              <label>IP Family</label>
-            </p-floatlabel>
-          </div>
-          <div class="flex align-items-center mt-3 col-4 md:col-4">
-            <label class="mr-2 mb-0" for="hiveSelected" style="line-height: 1.5;">Visualizzazione Hive</label>
-            <p-check-box [value]="hiveSelected" [binary]="true" (onChange)="hiveSelected = !hiveSelected"/>
-          </div>
-        }
+        <div class="col-4 mt-3 ml-3">
+          <p-toast/>
+          <p-button label="Search" icon="pi pi-search" [disabled]="!ableSearch" class="custom-btn-bg w-5"
+                    (click)="searchTriplets()"></p-button>
+        </div>
+      </p-fieldset>
+    </form>
+  </div>
+  <div class="grid col-12 lg:mt-5 lg:col-9 align-content-start justify-content-center">
+    <div class="col-12 pi flex justify-content-end">
+      <div class="mr-4" #myDataLegend>
       </div>
-      <div class="col-4 mt-3 md:col-4">
-        <p-toast/>
-        <p-button label="Search" icon="pi pi-search" [disabled]="!ableSearch" class="w-5"
-                  (click)="searchTriplets()"></p-button>
+    </div>
+    <div class="col-12 pi flex justify-content-center">
+      <div #myDataVis>
       </div>
-    </p-fieldset>
-  </form>
-</div>
-<div class="grid">
-  <div class="col-12 justify justify-content-end pi flex">
-    <div class="mr-4" #myDataLegend>
+    </div>
+    <div class="col-12 lg:mt-5 lg:col-9 justify-content-center flex justify-content-center">
+      <p-card header="Seleziona due nodi">
+        <p class="m-0">
+          Lorem ipsum dolor sit amet, consectetur adipisicing elit. Inventore sed consequuntur
+          error repudiandae numquam deserunt quisquam repellat libero asperiores earum nam nobis,
+          culpa ratione quam perferendis esse, cupiditate neque quas!
+        </p>
+      </p-card>
     </div>
   </div>
-  <div class="col-12 justify-content-center pi flex">
-    <div #myDataVis>
-    </div>
-  </div>
-</div>
 
+</div>
