@@ -1,13 +1,11 @@
 <div class="grid mt-4 mr-6 ml-6 mb-8">
   <div class="col-12 lg:col-3">
-    <div class="ml-2 text-xl">
+    <div class="ml-2">
       <h1>Triplet from ASes</h1>
-      <p>
-        Lorem ipsum dolor sit amet,
-        consectetur adipiscing elit.
-        Sed euismod, urna eu tincidunt consectetur,
-        nisi nisl aliquam eros,
-        a facilisis enim leo nec urna.<br>
+      <p> <!-- TODO: vedere come e se migliorare la descrizione della pagina -->
+        Visualizzazione dei collegamenti tra ASes precedenti e successivi a quello selezionato.<br>
+        Cliccare su un nodo per conoscerne i dettagli.<br>
+        Cliccare su due nodi collegati per avere dettagli della tripla specifica
       </p>
     </div>
     <form [formGroup]="netForm" novalidate>
@@ -69,15 +67,122 @@
       <div #myDataVis>
       </div>
     </div>
-    <div class="col-12 lg:mt-5 lg:col-9 justify-content-center flex justify-content-center">
-      <p-card header="Seleziona due nodi">
-        <p class="m-0">
-          Lorem ipsum dolor sit amet, consectetur adipisicing elit. Inventore sed consequuntur
-          error repudiandae numquam deserunt quisquam repellat libero asperiores earum nam nobis,
-          culpa ratione quam perferendis esse, cupiditate neque quas!
-        </p>
-      </p-card>
-    </div>
+    @if (drawService.getOriginSelected() != null) {
+      <div class="col-12 lg:mt-1 lg:col-4 justify-content-center flex">
+        <p-card #cardStart  header="Dettagli Origine">
+          <p class="m-0">
+            @if ((drawService.getOriginSelected()?.children?.length ?? 0) > 0) {
+              <p class="font-italic">Questo è un nodo aggregato. Selezionare il singolo nodo di cui si vuole sapere il
+                dettaglio:</p>
+              <p-select class="w-5" [options]="drawService.getOriginSelected()?.children ?? []"
+                        [optionLabel]="'ASNumber'"
+                        (onChange)="drawService.setOriginAggregationSelected($event.value)"></p-select>
+              @if (drawService.getOriginAggregationSelected() != null) {
+                <p class=" text-xl font-semibold">Nodo selezionato</p>
+                <div class="m-2">
+                  <span class="font-semibold">AS Number:</span>
+                  <span> {{ drawService.getOriginAggregationSelected()?.ASNumber }}</span>
+                </div>
+                <div class="m-2">
+                  <span class="font-semibold">Tipo: </span>
+                  <span>{{ drawService.getOriginAggregationSelected()?.role === 1 ? 'Origin' : 'Destination' }}</span>
+                </div>
+                <div class="m-2">
+                  <span class="font-semibold">Politiche: </span>
+                  <span>Ancora da implementare</span>
+                </div>
+              }
+            } @else {
+              <div class="m-2">
+                <span class="font-semibold">AS Number:</span>
+                <span> {{ drawService.getOriginSelected()?.ASNumber }}</span>
+              </div>
+              <div class="m-2">
+                <span class="font-semibold">Tipo: </span>
+                <span>{{ drawService.getOriginSelected()?.role === 1 ? 'Origin' : 'Destination' }}</span>
+              </div>
+              <div class="m-2">
+                <span class="font-semibold">Politiche: </span>
+                <span>Ancora da implementare</span>
+              </div>
+            }
+          </p>
+        </p-card>
+      </div>
+    }
+    @if (drawService.getOriginSelected() != null && drawService.getDestinationSelected() != null) {
+      <div class="col-12 lg:mt-1 lg:col-4 justify-content-center flex">
+        <svg width="520" height="200" viewBox="0 0 120 40">
+          <line x1="0" y1="20" x2="32" y2="20" stroke="blue" stroke-dasharray="4" stroke-width="1"/>
+          <line x1="22" y1="15" x2="32" y2="20" stroke="blue" stroke-width="1"/>
+          <line x1="22" y1="25" x2="32" y2="20" stroke="blue" stroke-width="1"/>
+          <text class="font-semibold" font-family="Arial" x="40" y="23" fill="#334155" stroke="2" font-size="8">
+            AS {{ netForm.get('asNumber')?.value }}
+          </text>
+          <line x1="85" y1="20" x2="125" y2="20" stroke="red" stroke-dasharray="4" stroke-width="1"/>
+          <line x1="110" y1="15" x2="120" y2="20" stroke="red" stroke-width="1"/>
+          <line x1="110" y1="25" x2="120" y2="20" stroke="red" stroke-width="1"/>
+          <line x1="60" y1="28" x2="60" y2="55" stroke="#334155" stroke-dasharray="4" stroke-width="1"/>
+          <line x1="60" y1="55" x2="52" y2="45" stroke="#334155" stroke-width="1"/>
+          <line x1="60" y1="55" x2="67" y2="45" stroke="#334155" stroke-width="1"/>
+        </svg>
+
+      </div>
+    }
+    @if (drawService.getDestinationSelected() != null) {
+      <div class="col-12 lg:mt-1 lg:col-4 justify-content-center flex">
+        <p-card #cardEnd  header="Dettagli Destinazione">
+          <p class="m-0">
+            @if ((drawService.getDestinationSelected()?.children?.length ?? 0) > 0) {
+              <p class="font-italic">Questo è un nodo aggregato. Selezionare il singolo nodo di cui si vuole sapere il
+                dettaglio:</p>
+              <p-select class="w-5" [options]="drawService.getDestinationSelected()?.children ?? []"
+                        [optionLabel]="'ASNumber'"
+                        (onChange)="drawService.setDestinationAggregationSelected($event.value)"></p-select>
+              @if (drawService.getDestinationAggregationSelected() != null) {
+                <p class=" text-xl font-semibold">Nodo selezionato</p>
+                <div class="m-2">
+                  <span class="font-semibold">AS Number:</span>
+                  <span> {{ drawService.getDestinationAggregationSelected()?.ASNumber }}</span>
+                </div>
+                <div class="m-2">
+                  <span class="font-semibold">Tipo: </span>
+                  <span>{{ drawService.getDestinationAggregationSelected()?.role === 1 ? 'Origin' : 'Destination' }}</span>
+                </div>
+                <div class="m-2">
+                  <span class="font-semibold">Politiche: </span>
+                  <span>Ancora da implementare</span>
+                </div>
+              }
+            } @else {
+              <div class="m-2">
+                <span class="font-semibold">AS Number:</span>
+                <span> {{ drawService.getDestinationSelected()?.ASNumber }}</span>
+              </div>
+              <div class="m-2">
+                <span class="font-semibold">Tipo: </span>
+                <span>{{ drawService.getDestinationSelected()?.role === 1 ? 'Origin' : 'Destination' }}</span>
+              </div>
+              <div class="m-2">
+                <span class="font-semibold">Politiche: </span>
+                <span>Ancora da implementare</span>
+              </div>
+            }
+          </p>
+        </p-card>
+      </div>
+    }
+    @if (drawService.getLinkSelected()) {
+      <div class="col-12 lg:mt-1 lg:col-4 justify-content-center flex">
+        <p-card header="Dettagli Tripla">
+          <p class="m-0 font-italic">
+            Attualmente non sono presenti dati dettagli interessanti per la tripla selezionata. Sviluppi futuri possono interessare le singole politiche dei
+            link coinvolti, oltre che ad un'analisi più approfondita delle rotte.
+          </p>
+        </p-card>
+      </div>
+    }
+
   </div>
 
 </div>

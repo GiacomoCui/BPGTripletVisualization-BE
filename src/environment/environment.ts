@@ -6,6 +6,7 @@ export const environment = {
   BackEndApi: 'https://localhost:44355/api',
   Endpoints: {
     tripletVisualization: {
+      triplets: '/triplets/triplet',
       availableCPs: '/triplets/availableCPs',
       middleCPsWithFamily: '/triplets/middleCPsWithFamily',
       findAvailableCPs: '/triplets/AvailableCPs',
@@ -13,7 +14,8 @@ export const environment = {
       findAsNumber: 'middleAS=',
       findQueryFamily: 'queryFamily=',
       findIPNumber: 'peerIPAddress=',
-      findPeerAS: 'peerAS='
+      findPeerAS: 'peerAS=',
+      findById: 'id=',
     }
   }
 }

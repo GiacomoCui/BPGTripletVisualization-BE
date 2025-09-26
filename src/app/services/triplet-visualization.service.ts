@@ -35,4 +35,9 @@ export class TripletVisualizationService {
       return this.httpClient.get(base + asParam + peerASParam + ipParam);
     }
   }
+
+  findTripletsById(dto: any): Observable<Object> {
+    const base = this.baseUrl + this.serviceUrl.tripletVisualization.triplets;
+    return this.httpClient.get(base + '/' + dto);
+  }
 }

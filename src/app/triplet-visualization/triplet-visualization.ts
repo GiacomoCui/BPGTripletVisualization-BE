@@ -1,4 +1,4 @@
-import {Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, OnChanges, OnDestroy, OnInit, SimpleChanges, ViewChild} from '@angular/core';
 import {FormBuilder, FormGroup} from '@angular/forms';
 import {TripletVisualizationService} from '../services/triplet-visualization.service';
 import {Subscription} from 'rxjs';
@@ -6,7 +6,15 @@ import {MessageService} from 'primeng/api';
 import {DrawGraph} from './draw-graph';
 import * as d3 from 'd3';
 import {ContextMenu} from 'primeng/contextmenu';
+import 'leader-line';
 
+declare let LeaderLine: any;
+
+export type Link = {
+  origin: Node;
+  destination: Node;
+  totalPathCount?: number;
+}
 
 export type Node = {
   ASNumber: number | null;
@@ -24,7 +32,7 @@ export type Node = {
   standalone: false,
   styleUrl: './triplet-visualization.css'
 })
-export class TripletVisualization implements OnInit, OnDestroy {
+export class TripletVisualization implements OnInit, OnDestroy, OnChanges {
 
   isCollapsed: boolean = false;
   subscription!: Subscription;
@@ -42,18 +50,15 @@ export class TripletVisualization implements OnInit, OnDestroy {
 
   origins: Set<Node> = new Set<Node>();
   destinations: Set<Node> = new Set<Node>();
+  links: Link[] = [];
   collisionMatrix: any = [];
-
-  aggregatedOrigins: { new: number, list: number[] }[] = [];
-  aggregatedDestinations: { new: number, list: number[] }[] = [];
-
   queryFamily: any = [{name: 'IPv4', value: 4}, {name: 'IPv6', value: 6}];
 
   @ViewChild('myDataVis', {static: true}) private chartContainer!: ElementRef;
   @ViewChild('myDataLegend', {static: true}) private legendContainer!: ElementRef;
-  @ViewChild('cm')  private nodeMenu!: ContextMenu
+  @ViewChild('cm') private nodeMenu!: ContextMenu
   private svg: any;
-   items: any[] = [];
+  items: any[] = [];
 
 
   constructor(private formBuilder: FormBuilder,
@@ -67,6 +72,10 @@ export class TripletVisualization implements OnInit, OnDestroy {
     });
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+      this.searchTripletDetail()
+  }
+
   ngOnInit(): void {
     const element = this.chartContainer.nativeElement;
     const elementLegend = this.legendContainer.nativeElement;
@@ -75,6 +84,9 @@ export class TripletVisualization implements OnInit, OnDestroy {
       { label: 'Copy', icon: 'pi pi-copy' },
       { label: 'Rename', icon: 'pi pi-file-edit' }
     ];
+    this.drawService.nodeSelected.subscribe(() => {
+      this.searchTripletDetail()
+    });
   }
 
   searchAvailableCPs() {
@@ -137,6 +149,8 @@ export class TripletVisualization implements OnInit, OnDestroy {
           this.fillMatrix(data);
           let mat = this.optimizeAllMatrix(this.collisionMatrix);
           mat = this.collapseAllMatrix(mat)
+          console.log('dati: ',data)
+          this.setLink(mat, data)
           this.drawGraph(mat, this.hiveSelected);
         } else {
           console.log('No Data Found');
@@ -150,6 +164,36 @@ export class TripletVisualization implements OnInit, OnDestroy {
       }
     });
     this.isCollapsed = true;
+  }
+
+  searchTripletDetail() {
+    if(!this.drawService.checkTriplet()){
+      return
+    }
+    const selectedNodes = this.drawService.getSelectedNodes();
+    if (!selectedNodes.origin || !selectedNodes.destination) {
+      this.messageService.add({severity: 'error', summary: 'Error', detail: 'Select both origin and destination'});
+      return;
+    }
+    const triplet = this.peerInfo.find((item: any) =>
+      item.prec == selectedNodes.origin?.ASNumber && item.succ == selectedNodes.destination?.ASNumber);
+    if (!triplet) {
+      this.messageService.add({severity: 'error', summary: 'Error', detail: 'Triplet not found'});
+      return;
+    }
+    console.log(triplet)
+    let id = triplet.id;
+
+    this.subscription = this.tripletVisualizationService.findTripletsById(id).subscribe({
+      next: (data: any) => {
+        this.drawService.setLinkSelected(true);
+      },
+      error: (data: any) => {
+        console.error('Error fetching triplet by id:', data);
+        this.messageService.add({severity: 'error', summary: 'Error', detail: 'Failed to fetch triplet by id'});
+        this.drawService.setLinkSelected(false);
+      }
+    })
   }
 
   fillMatrix(triplet: any) {
@@ -188,7 +232,7 @@ export class TripletVisualization implements OnInit, OnDestroy {
   }
 
   drawGraph(mat: any, hiveSelected: boolean) {
-    this.drawService.chooseGraph(mat, hiveSelected, this.origins, this.destinations);
+    this.drawService.chooseGraph(mat, this.links, hiveSelected, this.origins, this.destinations);
   }
 
   optimizeAllMatrix(matrix: any[]) {
@@ -339,6 +383,50 @@ export class TripletVisualization implements OnInit, OnDestroy {
     this.origins = originForAggregation;
     this.destinations = destinationForAggregation;
     return aggregatedMatrix;
+  }
+
+  setLink(mat: any[], data: any) {
+    for (let origin of this.origins) {
+      for (let destination of this.destinations) {
+        if (mat[destination.pos][origin.pos]) {
+          let totalPathCount = 0;
+          //trova tutti i triplet in data che hanno come prec origin.ASNumber e come succ destination.ASNumber. Se hanno il campo children valorizzato, allora invece di usare ASNumber usa il campo children.ASNumber per fare il match
+          for (let triplet of data) {
+            let precMatch = false;
+            let succMatch = false;
+            if (origin.children && origin.children.length > 0) {
+              for (let child of origin.children) {
+                if (triplet.prec == child.ASNumber) {
+                  precMatch = true;
+                  break;
+                }
+              }
+            } else {
+              if (triplet.prec == origin.ASNumber) {
+                precMatch = true;
+              }
+            }
+            if (destination.children && destination.children.length > 0) {
+              for (let child of destination.children) {
+                if (triplet.succ == child.ASNumber) {
+                  succMatch = true;
+                  break;
+                }
+              }
+            } else {
+              if (triplet.succ == destination.ASNumber) {
+                succMatch = true;
+              }
+            }
+            if (precMatch && succMatch) {
+              totalPathCount += triplet.totalPathCount;
+            }
+          }
+          this.links.push({origin: origin, destination: destination, totalPathCount: totalPathCount});
+        }
+      }
+    }
+    console.log('links: ', this.links)
   }
 
   ngOnDestroy(): void {
