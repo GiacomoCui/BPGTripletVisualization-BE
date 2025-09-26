@@ -11,7 +11,7 @@ export type Node = {
   _children?: Node[] | null // for collapsed nodes
   name?: string | null; // for collapsed nodes
   aggregation?: number | null  // number of nodes collapsed
-   };
+};
 
 export type Link = {
   origin: Node;
@@ -89,9 +89,16 @@ export class DrawGraph {
       .attr('stroke', 'red')
       .attr('stroke-dasharray', '5,5')
 
-    const originOffset =  600/(origins.size + 1 )
-    const destinationOffset = 600 / (destinations.size + 1 );
-
+    const originOffset = 600 / (origins.size + 1)
+    const destinationOffset = 600 / (destinations.size + 1);
+    const minPath = d3.min(links, d => (d.origin.aggregation ?? 1) + (d.destination.aggregation ?? 1)) ?? 1;
+    const maxPath = d3.max(links, d => (d.origin.aggregation ?? 1) + (d.destination.aggregation ?? 1)) ?? 1;
+    const quartPath = ((maxPath - minPath) / 4) + minPath;
+    const secondQuartPath = ((maxPath - minPath) / 4) * 3 + minPath;
+    console.log('Min path:', minPath);
+    console.log('Max path:', maxPath);
+    console.log(quartPath);
+    console.log(secondQuartPath);
     const nodi = this.svg.selectAll('.node')
       .data(origins)
       .enter()
@@ -100,9 +107,25 @@ export class DrawGraph {
       .attr('transform', (d: Node) => `translate(${xScale(d.pos) + originOffset}, ${yScale(0)})`)
       .append('path')
       .attr('d', (d: Node) => {
-        const symbolType = (d.children && d.children.length > 0) ? d3.symbolSquare : d3.symbolCircle;
-        return d3.symbol().size(100).type(symbolType)();
-      })
+          const symbolType = (d.children && d.children.length > 0) ? d3.symbolSquare : d3.symbolCircle;
+          let sizeToSet = 0;
+          if (d.children && d.children.length > 0) {
+            console.log('Nodo da verificare',d);
+            if (d.aggregation) {
+              if (d.aggregation <= quartPath) {
+                sizeToSet = 100;
+              } else if (d.aggregation > quartPath && d.aggregation <= secondQuartPath) {
+                sizeToSet = 300;
+              } else {
+                sizeToSet = 500;
+              }
+            }
+          } else {
+            sizeToSet = 100;
+          }
+          return d3.symbol().size(sizeToSet).type(symbolType)();
+        }
+      )
       .attr('fill', 'blue')
       .attr('stroke-width', (d: Node) => (d.children && d.children.length > 0) ? 2 : 0)
 
@@ -115,7 +138,22 @@ export class DrawGraph {
       .append('path')
       .attr('d', (d: Node) => {
         const symbolType = (d.children && d.children.length > 0) ? d3.symbolSquare : d3.symbolCircle;
-        return d3.symbol().type(symbolType).size(100)();
+        let sizeToSet = 0;
+        if (d.children && d.children.length > 0) {
+          console.log('Nodo da verificare',d);
+          if (d.aggregation) {
+            if (d.aggregation <= quartPath) {
+              sizeToSet = 100;
+            } else if (d.aggregation > quartPath && d.aggregation <= secondQuartPath) {
+              sizeToSet = 300;
+            } else {
+              sizeToSet = 500;
+            }
+          }
+        } else {
+          sizeToSet = 100;
+        }
+        return d3.symbol().size(sizeToSet).type(symbolType)();
       })
       .attr('fill', 'red')
       .attr('stroke-width', (d: Node) => (d.children && d.children.length > 0) ? 3 : 0)
@@ -144,18 +182,18 @@ export class DrawGraph {
       .attr('stroke-width', 1);
 
 
-/*    // Definizione della freccia
-    this.svg.append('defs').append('marker')
-      .attr('id', 'arrowhead')
-      .attr('viewBox', '0 -5 10 10')
-      .attr('refX', 5)
-      .attr('refY', 0)
-      .attr('orient', 'auto')
-      .attr('markerWidth', 6)
-      .attr('markerHeight', 6)
-      .append('path')
-      .attr('d', 'M0,-5L10,0L0,5')
-      .attr('fill', 'black');*/
+    /*    // Definizione della freccia
+        this.svg.append('defs').append('marker')
+          .attr('id', 'arrowhead')
+          .attr('viewBox', '0 -5 10 10')
+          .attr('refX', 5)
+          .attr('refY', 0)
+          .attr('orient', 'auto')
+          .attr('markerWidth', 6)
+          .attr('markerHeight', 6)
+          .append('path')
+          .attr('d', 'M0,-5L10,0L0,5')
+          .attr('fill', 'black');*/
 
     const Tooltip = d3.select(this.element)
       .append("div")
@@ -200,21 +238,20 @@ export class DrawGraph {
       .on('mouseout', handleMouseOut);
 
     nodi.on('click', (event: any, d: Node) => {
-      if (this.originSelected === d) {
-        d3.select(event.target).attr('fill', 'blue');
-        this.originSelected = null;
-        return;
-      }
+        if (this.originSelected === d) {
+          d3.select(event.target).attr('fill', 'blue');
+          this.originSelected = null;
+          return;
+        }
 
-      if (this.originSelected !== null) {
-        this.svg.selectAll('.node circle').attr('fill', 'blue');
-      }
+        if (this.originSelected !== null) {
+          this.svg.selectAll('.node circle').attr('fill', 'blue');
+        }
 
-      d3.select(event.target).attr('fill', 'orange');
-      this.originSelected = d;
-      this.nodeSelected.emit(d);
+        d3.select(event.target).attr('fill', 'orange');
+        this.originSelected = d;
+        this.nodeSelected.emit(d);
       }
-
     )
 
     nodiDestinazione.on('click', (event: any, d: Node) => {
@@ -234,23 +271,36 @@ export class DrawGraph {
     })
   }
 
-  private drawHiveGraph(data: any, origins: Set<Node>, destinations: Set<Node>) {
+  private drawHiveGraph(data
+                        :
+                        any, origins
+                        :
+                        Set<Node>, destinations
+                        :
+                        Set<Node>
+  ) {
     // Implementazione del grafico a nido d'ape
     // Da implementare in futuro
     console.log("Hive graph not implemented yet");
   }
 
-  getSelectedNodes(): { origin: Node | null, destination: Node | null } {
+  getSelectedNodes()
+    :
+    {
+      origin: Node | null, destination
+        :
+        Node | null
+    } {
     let originToSend: Node | null = null;
-    let destinationToSend : Node | null = null;
-    if(this.originSelected?.children?.length ?? -1 > 0){
+    let destinationToSend: Node | null = null;
+    if (this.originSelected?.children?.length ?? -1 > 0) {
       originToSend = this.originAggregationSelected;
-    }else{
+    } else {
       originToSend = this.originSelected;
     }
-    if(this.destinationSelected?.children?.length ?? -1 > 0){
+    if (this.destinationSelected?.children?.length ?? -1 > 0) {
       destinationToSend = this.destinationAggregationSelected;
-    }else{
+    } else {
       destinationToSend = this.destinationSelected;
     }
     return {
@@ -259,8 +309,11 @@ export class DrawGraph {
     };
   }
 
-  drawLegend(links: Link[]) {
-    if(this.elementLegend) {
+  drawLegend(links
+             :
+             Link[]
+  ) {
+    if (this.elementLegend) {
       d3.select(this.elementLegend).select('svg').remove();
     }
     const legendWidth = 300;
@@ -311,7 +364,7 @@ export class DrawGraph {
       d3.select(this.element).select('svg').remove();
       d3.select(this.element).select('div.tooltip').remove();
     }
-    if(this.elementLegend) {
+    if (this.elementLegend) {
       d3.select(this.elementLegend).select('svg').remove();
     }
   }
@@ -319,44 +372,59 @@ export class DrawGraph {
   getOriginSelected() {
     return this.originSelected;
   }
+
   getDestinationSelected() {
     return this.destinationSelected;
   }
+
   getOriginAggregationSelected() {
     return this.originAggregationSelected;
   }
+
   getDestinationAggregationSelected() {
     return this.destinationAggregationSelected;
   }
 
-  setOriginAggregationSelected(value: Node | null) {
+  setOriginAggregationSelected(value
+                               :
+                                 Node | null
+  ) {
     this.originAggregationSelected = value;
     this.nodeSelected.emit()
   }
-  setDestinationAggregationSelected(value: Node | null) {
+
+  setDestinationAggregationSelected(value
+                                    :
+                                      Node | null
+  ) {
     this.destinationAggregationSelected = value;
     this.nodeSelected.emit()
   }
 
-  checkTriplet(): boolean{
+  checkTriplet()
+    :
+    boolean {
     let check = true;
-    if(this.originSelected == null || this.destinationSelected == null){
+    if (this.originSelected == null || this.destinationSelected == null) {
       check = false
     }
-    if(this.destinationSelected?.children?.length ?? -1 > 0){
-      if(this.destinationAggregationSelected == null){
+    if (this.destinationSelected?.children?.length ?? -1 > 0) {
+      if (this.destinationAggregationSelected == null) {
         check = false
       }
     }
-    if(this.originSelected?.children?.length ?? -1 > 0){
-      if(this.originAggregationSelected == null){
+    if (this.originSelected?.children?.length ?? -1 > 0) {
+      if (this.originAggregationSelected == null) {
         check = false
       }
     }
     return check
   }
 
-  setLinkSelected(b: boolean) {
+  setLinkSelected(b
+                  :
+                  boolean
+  ) {
     this.linkSelected = b;
   }
 
